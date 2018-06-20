@@ -1,16 +1,13 @@
-(ns egg-cljc-utils.core)
+(ns egg-cljc-utils.core
+  #?(:clj (:require [clojure.reflect :refer [reflect]])))
 
-#?( :clj
+(defn- inspect-1  [expr]
+  `(let  [result# ~expr]
+     (println  (str  (pr-str '~expr) " => "  (pr-str result#)))
+     result#))
 
-  (defn- inspect-1  [expr]
-    `(let  [result# ~expr]
-       (println  (str  (pr-str '~expr) " => "  (pr-str result#)))
-       result#))
-
-  (defmacro inspect  [& exprs]
-    `(do ~@(map inspect-1 exprs)))
-
-)
+(defmacro inspect  [& exprs]
+  `(do ~@(map inspect-1 exprs)))
 
 
 (defn print-call-stack
@@ -28,8 +25,8 @@ parameters is bound to a top-level var of the same name.  Handles docstrings
 and metadata, but pre/post conditions will not be checked by the resulting
 function. WARNING: does not attempt to avoid name collisions between parameter
 names and existing ns-level vars; may overwrite existing var bindings in the
-ns. Suitable for use during development only. Works in both clj and cljs, 
-although for cljs the usual caveats about macros apply -- requiring the ns at 
+ns. Suitable for use during development only. Works in both clj and cljs,
+although for cljs the usual caveats about macros apply -- requiring the ns at
 runtime from the repl seems to work well for defn!.
   ----
   user> (defn! f [x y] (* x y))
@@ -48,3 +45,29 @@ runtime from the repl seems to work well for defn!.
         inline-defs (for [arg fn-args]
                       `(def ~arg ~arg))]
     `(defn ~@front ~fn-args ~@inline-defs ~@back)))
+
+
+;;;;;;;; Reflection & introspection
+
+(do
+  #?@(:clj
+      [
+       ;;;; Some reflection stuff I'm fooling around with:
+
+       (defn- get-name [^java.lang.reflect.Method m] (.getName m))
+
+       (defn get-methods [obj] (.getMethods ^Class (type obj)))
+
+       (def get-method-names #(map get-name (get-methods %)))
+
+       (def get-method-sigs #(map str (get-methods %)))
+
+       ;;;; End reflection stuff
+
+       ]
+      :cljs
+      [
+       (defn props [obj]
+         (js/Object.keys obj))
+
+       ]))
