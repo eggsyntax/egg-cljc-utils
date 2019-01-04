@@ -122,7 +122,8 @@ runtime from the repl seems to work well for defn!.
 ;;;;;;;; Clojure Reflection & introspection
 
 (do ;; Checking what's been defined in the ns; useful at REPL.
-    ;; Clojure-only, unfortunately, because cljs doesn't have var-get.
+    ;; Clojure-only, unfortunately, because cljs doesn't have enough
+    ;; introspection. Maybe with a macro, but not right now.
   (#?@(
        :clj
        [(defn ns-values-map
