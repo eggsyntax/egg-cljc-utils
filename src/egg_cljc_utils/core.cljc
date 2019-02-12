@@ -122,9 +122,8 @@ runtime from the repl seems to work well for defn!.
 ;;;;;;;; Clojure Reflection & introspection
 
 (do ;; Checking what's been defined in the ns; useful at REPL.
-    ;; Clojure-only, unfortunately, because cljs doesn't have enough
-    ;; introspection. Maybe with a macro, but not right now.
-  (#?@(
+    ;; Clojure-only, unfortunately, because cljs doesn't have var-get.
+  #?@(
        :clj
        [(defn ns-values-map
           "Returns a map from symbol to value for all values defined by the ns. May be
@@ -151,7 +150,7 @@ runtime from the repl seems to work well for defn!.
            (clojure.set/difference (set (keys (ns-values-map ns')))
                                    (set (ns-fns ns')))))
 
-        ])))
+        ]))
 
 ;;;;;;;; Java Reflection & introspection
 
