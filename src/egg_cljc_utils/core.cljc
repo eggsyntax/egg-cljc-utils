@@ -19,7 +19,7 @@
 
 (defn readr [prompt exit-code]
   (let [input (clojure.main/repl-read prompt exit-code)]
-    (if (= input :q)
+    (if (or (= input :q) (= input 'q)) 
       exit-code
       input)))
 
@@ -27,7 +27,6 @@
   (let [symbols (keys &env)]
     (zipmap (map (fn [sym] `(quote ~sym)) symbols) symbols)))
 
-;;
 (defmacro break
   ":q to exit"
   []
