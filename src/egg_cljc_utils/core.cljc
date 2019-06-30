@@ -1,6 +1,7 @@
 (ns egg-cljc-utils.core
   #?(:clj (:require [clojure.reflect :refer [reflect]]
-                    clojure.set)))
+                    clojure.set
+                    [clojure.test :as t])))
 
 (defn- inspect-1  [expr]
   `(let  [result# ~expr]
@@ -19,7 +20,7 @@
 
 (defn readr [prompt exit-code]
   (let [input (clojure.main/repl-read prompt exit-code)]
-    (if (or (= input :q) (= input 'q)) 
+    (if (or (= input :q) (= input 'q))
       exit-code
       input)))
 
@@ -66,6 +67,9 @@
                  ;; Note that cljs version sends to JS console to get a better stack trace.
                  :cljs (try (throw (js/Error. ""))  (catch js/Error e  (js/console.log e)))))
 
+
+;; Data searching and munging
+
 ;; TODO search-key
 (defn search-val
   "Given a nested data structure and a desired value which appears in the
@@ -89,6 +93,57 @@
      (set? m)        (run! (fn [item]
                              (search-val item x (conj path item)))
                            m))))
+
+(defn- seq-into
+  "Like into, but returns nil if existing-seq is empty or contains only nils."
+  [empty-coll existing-seq]
+  (let [nil-free-existing-seq (remove nil? existing-seq)]
+    (when (seq nil-free-existing-seq)
+     (into empty-coll nil-free-existing-seq))))
+
+(defn dpull*
+  "Inner implementation of dpull"
+  [d p]
+  (when (and d p)
+    (cond
+      (sequential? p) ; seq containing keys for a collection
+      (do
+        (assert (or (map? d) (set? d) (sequential? d)) (str "Pull vector " p " can't be applied to a " (type d) ", only to a map or sequence."))
+        (apply merge
+               (seq-into []
+                (map (partial dpull* d) p))))
+
+      (map? p) ; specification for a key and its substructure
+      (do
+        (assert (= 1 (count p)) (str "Pull syntax map " p " can only contain one item."))
+        (let [[k v] (first p)]
+          (assert (vector? v) (str "Value in pull syntax map " p " must be a vector; " v " is a " (type v) "."))
+          ;; k tells us what substructure to get from d; v describes what should
+          ;; be pulled from that substructure.
+          (when (contains? d k)
+            (when-let [v-pull (dpull* (get d k) v)]
+              {k v-pull}))))
+
+      :else ; treat this element as a key which must be present in the current data structure
+      (do
+        (assert (or (map? d) (set? d) (sequential? d)) (str "Pull vector " p " can't be applied to a " (type d) ", only to a map or sequence."))
+        (if (or (sequential? d) (set? d)) ; seq-ish of entities; apply pull to each
+          (seq-into (empty d)
+                    (remove nil?
+                            (mapv #(dpull* % p) d)))
+          (when-let [v (get d p)] {p v}) ; simple map retrieval
+          )))))
+
+(defn dpull
+  "Pull data from a nested data structure d, using Datomic pull structure p.
+  Matches Datomic pull behavior in most ways, but it's unnecessary to use '* for
+  'all attributes'; simply including :foo/bar without further specification is
+  sufficient to return all substructure of :foo/bar."
+  [d p]
+  (assert (vector? p) "Top-level structure of pull specification must be a vector.")
+  (dpull* d p))
+
+;; Variant repls & related
 
 (defmacro defn!
   "Variant of defn. When the function thus defined is called, each of its
