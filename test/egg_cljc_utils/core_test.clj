@@ -52,3 +52,37 @@
                (dpull ex [{:user/pets [:pet/diseases]}]))))
     (t/testing "nil data structure (pull structure isn't allowed to be nil):"
       (t/is (= nil (dpull nil [:foo/bar]))))))
+
+(t/deftest search-key-test
+  (let [ex {:user/id 12,
+            :user/name "Bob",
+            :user/address {:address/town "Springfield",
+                           :address/zip "11111",
+                           :address/georegion {:georegion/name "Central Valley",
+                                               :georegion/ave-temp 80}}
+            :user/pets [{:pet/name "Tony",
+                         :pet/type "Tiger"},
+                        {:pet/name "Louis",
+                         :pet/type "Lion"}]
+            1247 :excuse-for-non-kw-key
+            :user/emails #{{:email/name "Gmail", :email/address "foo@gmail.com"}
+                           {:email/name "Yahoo", :email/address "foo@yahoo.com"}}}]
+    (t/testing "Simple cases"
+      (t/is (= [[:user/name]]
+               (search-key ex :user/name)))
+      (t/is (= [[:user/address :address/town]]
+               (search-key ex :address/town)))
+      (t/is (= [[:user/address :address/georegion :georegion/name]]
+               (search-key ex :georegion/name))))
+    (t/testing "Sequences"
+      (t/is (= [[:user/pets 0 :pet/name] [:user/pets 1 :pet/name]]
+               (search-key ex :pet/name))))
+    (t/testing "Sets"
+      (t/is (= [[:user/emails {:email/name "Gmail", :email/address "foo@gmail.com"} :email/name]
+                [:user/emails {:email/name "Yahoo", :email/address "foo@yahoo.com"} :email/name]]
+               (search-key ex :email/name))))
+    (t/testing "Nils"
+      (t/is (= [] (search-key nil :foo/bar)))
+      (t/is (= [] (search-key ex nil))))
+    (t/testing "Missing keys"
+      (t/is (= [] (search-key ex :missing/key))))))

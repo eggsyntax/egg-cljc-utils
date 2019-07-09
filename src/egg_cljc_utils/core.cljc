@@ -70,11 +70,39 @@
 
 ;; Data searching and munging
 
-;; TODO search-key
+(defn search-key
+  "Given a nested data structure and a desired key which appears in the
+  structure, return all paths which will lead to that key (including as the last
+  element the key itself). These paths can often be used directly in a get-in or
+  a threading macro."
+  ([m ky]
+   (into [] (remove nil? (search-key m ky []))))
+  ([m ky path]
+   (when (coll? m)
+     (if (contains? m ky)
+       [(conj path ky)] ; success!
+       (cond
+         ;; (= m ky) path
+         (map? m)        (mapcat
+                          (fn [[k v]]
+                            (search-key v ky (conj path k)))
+                          m)
+         (sequential? m) (apply concat
+                                (map-indexed
+                                 (fn [idx item]
+                                   (search-key item ky (conj path idx)))
+                                 m))
+         (set? m)        (mapcat
+                          (fn [item]
+                            ;; Note: (conj path item) can make for an awkward
+                            ;; path since item may be a large, complex structure.
+                            (search-key item ky (conj path item)))
+                          m))))))
+
 (defn search-val
   "Given a nested data structure and a desired value which appears in the
   structure, print all paths which will lead to that value (the results, for
-  example, could be used directly in a get-in).
+  example, can often be used directly in a get-in or a threading macro).
   Note that this fn, intended for repl use, prints found paths and returns nil."
   ([m x]
    (search-val m x []))
@@ -82,9 +110,8 @@
    (cond
      (= x m)         (println "Path to" x ":" path)
      (map? m)        (run!
-                      (fn [item]
-                        (let [[k v] item]
-                          (search-val v x (conj path k))))
+                      (fn [[k v]]
+                        (search-val v x (conj path k)))
                       m)
      (sequential? m) (doall (map-indexed
                              (fn [idx item]
@@ -134,6 +161,9 @@
           (when-let [v (get d p)] {p v}) ; simple map retrieval
           )))))
 
+;; Alternatives:
+;; - Juxt has a full-featured library for doing the same thing: https://github.com/juxt/pull
+;; - Meander and Specter are both libraries for performing complex searches & transformations on Clojure data
 (defn dpull
   "Pull data from a nested data structure d, using Datomic pull structure p.
   Matches Datomic pull behavior in most ways, but it's unnecessary to use '* for
