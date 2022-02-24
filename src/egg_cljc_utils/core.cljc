@@ -285,80 +285,15 @@ runtime from the repl seems to work well for defn!.
 
        ]))
 
-
-
 ;; TODO DELETE-ME after using to debug search-key
 (comment ; ctx that breaks search-key
 
-{:reg-at-polling-place false,
- :voter-registration-status-url "https://www.mvp.sos.ga.gov/MVP/mvp.do",
- :reg-deadline-passed false,
- :local-reg-authority-lookup-url
- "https://elections.sos.ga.gov/Elections/countyregistrars.do",
- :recipient
- {:party :democratic,
-  :paper-vbm-form false,
-  :addresses
-  {:registered
-   {:city "Athens",
-    :state "GA",
-    :street "2450 S Milledge Ave",
-    :zip "30605",
-    :ocd-divisions
-    #{"ocd-division/country:us/state:ga"
-      "ocd-division/country:us/state:ga/place:athens" "ocd-division/country:us"
-      "ocd-division/country:us/state:ga/county:clarke"
-      "ocd-division/country:us/state:ga/cd:10"}}},
-  :email "t@t.no",
-  :last-name "McTesterson",
-  :should-request-vbm-form false,
-  :create-session #uuid "99f6f191-d0cb-4e56-87ee-310ccccf2eca",
-  :state "Georgia",
-  :hostname "localhost",
-  :first-name "GA",
-  :vbm-form-available true,
-  :language-preference :en,
-  :id #uuid "5ea1ec5d-f55b-4032-95b2-97ca8cdcd746",
-  :full-name "GA McTesterson",
-  :voting-preference {:in-person true},
-  :election-mail-subscription false},
- :local-election-authority-lookup-url
- "https://elections.sos.ga.gov/Elections/countyelectionoffices.do",
- :election
- {:id #uuid "5ea1b0a8-3c51-4892-b8c2-db54cd4121ba",
-  :description "Georgia All Active Reg Voters VBM Primary2",
-  :date "Wednesday, May 12",
-  :primary-election-instructions
-  {:email
-   "Georgia holds open presidential primary elections, which means all voters, regardless of party, can participate. On Election Day, you may choose either party’s primary ballot. This decision does not register you with that party.",
-   :sms
-   "Find out more about your state's eligibility requirements for the 2020 presidential primary at: https://tvote.org/2uKsnez"}},
- :voter-registration-status-url-shortened "https://tvote.org/2m2WW5S",
- :signers "Ciru, Solomon, Quinn,",
- :election-authority
- {:official-title "County Election Supervisor",
-  :office-name "Clarke County",
-  :address-segments ("Clarke County" "PO BOX 1828" "ATHENS GA 30603"),
-  :ballot-request-url-download "http://tvote.org/2mG8BeF",
-  :vbm-encouraged-type :mailing-requests-to-all-active,
-  :email "charlotte.sosebee@accgov.com",
-  :phone "(706) 613-3150",
-  :lookup nil},
- :reg-at-office false,
- :voting-method {:no-excuse-vbm true},
- :reg-same-day nil,
- :deadlines
- {:registration
-  {:deadline-postmarked "Wednesday, May 5",
-   :deadline-online "Wednesday, May 5"},
-  :vbm {:date "Wednesday, May 5"}},
- :early-voting
- {:primary false,
-  :start "Tuesday, May 18",
-  :type :early-voting,
-  :excuse-required false,
-  :url "https://elections.sos.ga.gov/Elections/advancedVotingInfo.do",
-  :end "Sunday, May 30",
-  :exact-dates false}}
+  (def ctx {:recipient
+            {:state "Georgia"
+             :addresses
+             {:registered
+              {:state "GA"}}}})
 
+  (search-key ctx :state)
+  ;; [[:recipient :state]]
 )
